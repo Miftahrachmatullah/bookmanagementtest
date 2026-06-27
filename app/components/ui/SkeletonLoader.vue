@@ -1,10 +1,12 @@
 <script setup lang="ts">
 interface Props {
   rows?: number
+  columns?: number
 }
 
 withDefaults(defineProps<Props>(), {
-  rows: 5
+  rows: 5,
+  columns: 6
 })
 </script>
 
@@ -37,6 +39,11 @@ withDefaults(defineProps<Props>(), {
       <!-- Books Count / Published Year -->
       <td class="px-6 py-3.5 text-center">
         <div class="h-4 w-12 bg-slate-200 rounded animate-pulse mx-auto" />
+      </td>
+
+      <!-- Status Column (v-if columns is 7) -->
+      <td v-if="columns === 7" class="px-6 py-3.5 text-center">
+        <div class="h-5 w-20 bg-slate-200 rounded-full animate-pulse mx-auto" />
       </td>
 
       <!-- Actions -->

@@ -5,7 +5,6 @@ import {
   RefreshCw, 
   SlidersHorizontal, 
   Download, 
-  Bell, 
   Plus, 
   Pencil, 
   Trash2, 
@@ -13,7 +12,8 @@ import {
   ChevronRight,
   ChevronDown,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '~/components/base/BaseButton.vue'
@@ -241,14 +241,6 @@ const triggerNotifications = () => {
 // INITIAL FETCH ON MOUNT
 onMounted(() => {
   triggerFetch()
-  
-  // Auto-open "Silent Patterns" edit modal if available for assessment
-  setTimeout(() => {
-    const silentPatterns = books.value.find((b: any) => b.title.toLowerCase().includes('silent patterns'))
-    if (silentPatterns) {
-      handleEditClick(silentPatterns)
-    }
-  }, 600)
 })
 </script>
 
@@ -286,15 +278,7 @@ onMounted(() => {
           + Add
         </button>
 
-        <!-- Bell icon with red dot -->
-        <button 
-          @click="triggerNotifications"
-          class="hidden md:block p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors relative"
-          title="Notifications"
-        >
-          <Bell class="w-5 h-5" />
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-        </button>
+
 
         <!-- Divider -->
         <div class="w-px h-6 bg-slate-200 mx-1 hidden md:block" />
@@ -380,10 +364,11 @@ onMounted(() => {
                 <th class="w-[180px] text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Author</th>
                 <th class="w-[160px] text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">ISBN</th>
                 <th class="w-[80px] text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Year</th>
+                <th class="w-[120px] text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
                 <th class="w-[90px] text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
             </thead>
-            <SkeletonLoader :rows="10" />
+            <SkeletonLoader :rows="10" :columns="7" />
           </table>
         </div>
 
@@ -413,6 +398,7 @@ onMounted(() => {
                 <th class="w-[180px] text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Author</th>
                 <th class="w-[160px] text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">ISBN</th>
                 <th class="w-[80px] text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Year</th>
+                <th class="w-[120px] text-center text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
                 <th class="w-[90px] text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -451,6 +437,29 @@ onMounted(() => {
                 <!-- Published Year Column -->
                 <td class="px-4 py-3 text-sm text-slate-600 text-center">
                   {{ book.published_year }}
+                </td>
+
+                <!-- Status Badge Column -->
+                <td class="px-4 py-3 text-center">
+                  <span 
+                    v-if="book.status === 'AVAILABLE'"
+                    class="inline-flex items-center bg-green-50 text-green-700 border border-green-200 rounded-full px-3 py-1 text-[11px] font-medium uppercase shrink-0"
+                  >
+                    AVAILABLE
+                  </span>
+                  <span 
+                    v-else-if="book.status === 'LOANED'"
+                    class="inline-flex items-center bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-3 py-1 text-[11px] font-medium uppercase shrink-0"
+                  >
+                    LOANED
+                  </span>
+                  <span 
+                    v-else-if="book.status === 'RESERVED'"
+                    class="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase shrink-0"
+                  >
+                    <Lock class="w-3 h-3 shrink-0" />
+                    RESERVED
+                  </span>
                 </td>
 
                 <!-- Actions Column -->

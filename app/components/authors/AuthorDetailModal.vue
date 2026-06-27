@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { X, Mail, Calendar, BookOpen } from 'lucide-vue-next'
+import { X, Mail, Calendar, BookOpen, Lock } from 'lucide-vue-next'
 import BaseModal from '../base/BaseModal.vue'
 import BaseButton from '../base/BaseButton.vue'
 
@@ -13,14 +12,19 @@ const props = defineProps<Props>()
 const emit = defineEmits(['close'])
 
 const author = ref<any>(null)
+const books = ref<any[]>([])
 const loading = ref(false)
 
 watch(() => props.show, async (newVal) => {
   if (newVal && props.authorId) {
     loading.value = true
     try {
-      const data = await $fetch<any>(`/api/v1/authors/${props.authorId}`)
-      author.value = data.data
+      const [authorData, booksData] = await Promise.all([
+        $fetch<any>(`/api/v1/authors/${props.authorId}`),
+        $fetch<any>(`/api/v1/books?author_id=${props.authorId}&per_page=100`)
+      ])
+      author.value = authorData.data
+      books.value = booksData.data
     } catch (err) {
       console.error(err)
     } finally {
@@ -28,6 +32,7 @@ watch(() => props.show, async (newVal) => {
     }
   } else {
     author.value = null
+    books.value = []
   }
 })
 
@@ -125,6 +130,47 @@ const formatDate = (dateStr: string) => {
         <p class="text-sm text-slate-600 leading-relaxed font-normal whitespace-pre-line">
           {{ author.bio || 'No biography details provided.' }}
         </p>
+      </div>
+
+      <!-- Books Written Section -->
+      <div class="space-y-2 border-t border-slate-100 pt-4">
+        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Books Written</h4>
+        <ul v-if="books.length > 0" class="divide-y divide-slate-100 max-h-48 overflow-y-auto pr-1">
+          <li v-for="book in books" :key="book.id" class="py-2 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <!-- Book Cover Thumbnail 24x32px or BookOpen -->
+              <div class="w-6 h-8 rounded overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
+                <img v-if="book.cover_url" :src="book.cover_url" class="w-full h-full object-cover" alt="Cover" />
+                <BookOpen v-else class="w-3.5 h-3.5 text-slate-400" />
+              </div>
+              <div class="min-w-0">
+                <span class="text-sm font-medium text-slate-900 block truncate leading-tight">{{ book.title }}</span>
+                <span class="text-xs text-slate-400">{{ book.published_year }} &bull; {{ book.isbn }}</span>
+              </div>
+            </div>
+            <!-- Status Badge -->
+            <span 
+              v-if="book.status === 'AVAILABLE'"
+              class="inline-flex items-center bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase shrink-0"
+            >
+              AVAILABLE
+            </span>
+            <span 
+              v-else-if="book.status === 'LOANED'"
+              class="inline-flex items-center bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase shrink-0"
+            >
+              LOANED
+            </span>
+            <span 
+              v-else-if="book.status === 'RESERVED'"
+              class="inline-flex items-center gap-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase shrink-0"
+            >
+              <Lock class="w-2.5 h-2.5 shrink-0" />
+              RESERVED
+            </span>
+          </li>
+        </ul>
+        <p v-else class="text-sm text-slate-500 italic">No books cataloged for this author.</p>
       </div>
     </div>
 
