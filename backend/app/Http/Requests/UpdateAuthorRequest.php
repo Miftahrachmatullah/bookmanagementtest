@@ -13,14 +13,15 @@ class UpdateAuthorRequest extends FormRequest
 
     public function rules(): array
     {
-        $authorId = $this->route('author');
+        $author = $this->route('author');
+        $authorId = is_object($author) ? $author->id : $author;
 
         return [
-            'name'       => ['required', 'string', 'max:255'],
-            'email'      => ['required', 'email', 'max:255',
-                             "unique:authors,email,{$authorId}"],
-            'birth_date' => ['required', 'date', 'before_or_equal:today'],
-            'bio'        => ['nullable', 'string', 'max:1000'],
+            'name'          => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'max:255', "unique:authors,email,{$authorId}"],
+            'birth_date'    => ['required', 'date', 'before_or_equal:today'],
+            'bio'           => ['nullable', 'string', 'max:1000'],
+            'profile_photo' => ['nullable', 'image', 'max:2048'],
         ];
     }
 }

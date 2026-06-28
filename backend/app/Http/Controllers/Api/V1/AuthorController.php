@@ -11,48 +11,67 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class AuthorController
+ *
+ * Handles API actions related to authors.
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class AuthorController extends Controller
 {
     /**
-     * GET /api/v1/authors
-     * List authors dengan pagination, search opsional, dan caching.
+     * Display a listing of the authors.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $page    = $request->integer('page', 1);
         $perPage = min($request->integer('per_page', 10), 50);
         $search  = $request->string('search')->trim()->value();
 
-        $cacheKey = "authors:page:{$page}:per:{$perPage}:search:{$search}";
-
-        $authors = Cache::remember($cacheKey, 60, function () use ($perPage, $search) {
-            return Author::query()
-                ->when($search, fn($q) =>
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                )
-                ->withCount('books')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
-        });
+        $authors = Author::query()
+            ->when($search, fn($q) =>
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+            )
+            ->withCount('books')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return AuthorResource::collection($authors);
     }
 
     /**
-     * POST /api/v1/authors
+     * Store a newly created author in storage.
+     *
+     * @param  \App\Http\Requests\StoreAuthorRequest  $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreAuthorRequest $request): AuthorResource
+    public function store(StoreAuthorRequest $request): JsonResponse
     {
-        $author = Author::create($request->validated());
-        Cache::flush();
+        $data = $request->validated();
 
-        return new AuthorResource($author->loadCount('books'));
+        if ($request->hasFile('profile_photo')) {
+            $path = $request->file('profile_photo')->store('authors', 'public');
+            $data['profile_photo_path'] = $path;
+        }
+
+        $author = Author::create($data);
+
+        return (new AuthorResource($author->loadCount('books')))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
-     * GET /api/v1/authors/{author}
+     * Display the specified author.
+     *
+     * @param  \App\Models\Author  $author
+     * @return \App\Http\Resources\AuthorResource
      */
     public function show(Author $author): AuthorResource
     {
@@ -60,24 +79,45 @@ class AuthorController extends Controller
     }
 
     /**
-     * PUT /api/v1/authors/{author}
+     * Update the specified author in storage.
+     *
+     * @param  \App\Http\Requests\UpdateAuthorRequest  $request
+     * @param  \App\Models\Author  $author
+     * @return \App\Http\Resources\AuthorResource
      */
     public function update(UpdateAuthorRequest $request, Author $author): AuthorResource
     {
-        $author->update($request->validated());
-        Cache::flush();
+        $data = $request->validated();
+
+        if ($request->has('profile_photo_remove') && $request->input('profile_photo_remove') == '1') {
+            if ($author->profile_photo_path) {
+                Storage::disk('public')->delete($author->profile_photo_path);
+            }
+            $data['profile_photo_path'] = null;
+        }
+
+        if ($request->hasFile('profile_photo')) {
+            if ($author->profile_photo_path) {
+                Storage::disk('public')->delete($author->profile_photo_path);
+            }
+            $path = $request->file('profile_photo')->store('authors', 'public');
+            $data['profile_photo_path'] = $path;
+        }
+
+        $author->update($data);
 
         return new AuthorResource($author->fresh()->loadCount('books'));
     }
 
     /**
-     * DELETE /api/v1/authors/{author}
-     * Cascade delete books via foreign key ON DELETE CASCADE.
+     * Remove the specified author from storage.
+     *
+     * @param  \App\Models\Author  $author
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Author $author): JsonResponse
     {
         $author->delete();
-        Cache::flush();
 
         return response()->json(null, 204);
     }

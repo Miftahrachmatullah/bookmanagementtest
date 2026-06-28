@@ -19,6 +19,8 @@ class BookResource extends JsonResource
             'isbn'           => $this->isbn,
             'published_year' => $this->published_year,
             'description'    => $this->description,
+            'status'         => $this->status,
+            'cover_url'      => $this->cover_image_path ? asset('storage/' . $this->cover_image_path) : null,
             'created_at'     => $this->created_at?->toISOString(),
             'updated_at'     => $this->updated_at?->toISOString(),
         ];

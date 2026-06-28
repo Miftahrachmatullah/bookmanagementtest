@@ -10,12 +10,23 @@ use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
+/**
+ * Class BookController
+ *
+ * Handles API actions related to books.
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class BookController extends Controller
 {
     /**
-     * GET /api/v1/books
-     * List books dengan pagination dan filter opsional by author_id.
+     * Display a listing of the books.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -37,17 +48,32 @@ class BookController extends Controller
     }
 
     /**
-     * POST /api/v1/books
+     * Store a newly created book in storage.
+     *
+     * @param  \App\Http\Requests\StoreBookRequest  $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreBookRequest $request): BookResource
+    public function store(StoreBookRequest $request): JsonResponse
     {
-        $book = Book::create($request->validated());
+        $data = $request->validated();
 
-        return new BookResource($book->load('author'));
+        if ($request->hasFile('cover_image')) {
+            $path = $request->file('cover_image')->store('books', 'public');
+            $data['cover_image_path'] = $path;
+        }
+
+        $book = Book::create($data);
+
+        return (new BookResource($book->load('author')))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
-     * GET /api/v1/books/{book}
+     * Display the specified book.
+     *
+     * @param  \App\Models\Book  $book
+     * @return \App\Http\Resources\BookResource
      */
     public function show(Book $book): BookResource
     {
@@ -55,17 +81,41 @@ class BookController extends Controller
     }
 
     /**
-     * PUT /api/v1/books/{book}
+     * Update the specified book in storage.
+     *
+     * @param  \App\Http\Requests\UpdateBookRequest  $request
+     * @param  \App\Models\Book  $book
+     * @return \App\Http\Resources\BookResource
      */
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
-        $book->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->has('cover_image_remove') && $request->input('cover_image_remove') == '1') {
+            if ($book->cover_image_path) {
+                Storage::disk('public')->delete($book->cover_image_path);
+            }
+            $data['cover_image_path'] = null;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            if ($book->cover_image_path) {
+                Storage::disk('public')->delete($book->cover_image_path);
+            }
+            $path = $request->file('cover_image')->store('books', 'public');
+            $data['cover_image_path'] = $path;
+        }
+
+        $book->update($data);
 
         return new BookResource($book->fresh()->load('author'));
     }
 
     /**
-     * DELETE /api/v1/books/{book}
+     * Remove the specified book from storage.
+     *
+     * @param  \App\Models\Book  $book
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Book $book): JsonResponse
     {

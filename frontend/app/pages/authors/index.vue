@@ -4,12 +4,9 @@ import {
   Search, 
   RefreshCw, 
   SlidersHorizontal, 
-  Download, 
   Plus, 
   Pencil, 
   Trash2, 
-  ChevronLeft, 
-  ChevronRight,
   X,
   MoreHorizontal,
   Eye,
@@ -22,6 +19,7 @@ import AuthorFormModal from '~/components/authors/AuthorFormModal.vue'
 import ConfirmDialog from '~/components/ui/ConfirmDialog.vue'
 import SkeletonLoader from '~/components/ui/SkeletonLoader.vue'
 import AuthorDetailModal from '~/components/authors/AuthorDetailModal.vue'
+import Pagination from '~/components/ui/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuthors } from '~/composables/useAuthors'
 
@@ -36,6 +34,10 @@ const { authors, meta, loading, error, fetchAuthors, createAuthor, updateAuthor,
 const searchQuery = ref((route.query.search as string) || '')
 const currentPage = ref(parseInt(route.query.page as string) || 1)
 const perPage = ref(10)
+
+function onPageChange(page: number) {
+  currentPage.value = page
+}
 
 // Modal states
 const showAddModal = ref(false)
@@ -262,13 +264,7 @@ onMounted(() => {
       
       <div class="flex items-center gap-3">
         <!-- Download icon (ghost) -->
-        <button 
-          @click="triggerDownload"
-          class="hidden md:block p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          title="Export CSV"
-        >
-          <Download class="w-5 h-5" />
-        </button>
+        <DownloadButton @click="triggerDownload" />
 
 
 
@@ -463,54 +459,12 @@ onMounted(() => {
           </table>
         </div>
 
-        <!-- Desktop Pagination Row -->
-        <div v-if="!error && authors.length > 0 && meta && meta.last_page > 1" class="px-6 py-3.5 border-t border-slate-200 flex items-center justify-between select-none hidden md:flex">
-          <p class="text-[12px] text-slate-500 font-normal">
-            Showing {{ ((currentPage - 1) * perPage) + 1 }}–{{ Math.min(currentPage * perPage, meta.total || 0) }} of {{ meta.total || 0 }} results
-          </p>
-
-          <div class="flex items-center gap-1">
-            <!-- Prev button -->
-            <button 
-              @click="currentPage > 1 && (currentPage--)"
-              :disabled="currentPage === 1"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-
-            <!-- Page indicators -->
-            <template v-for="p in meta.last_page" :key="p">
-              <button
-                v-if="p === 1 || p === meta.last_page || Math.abs(p - currentPage) <= 1"
-                @click="currentPage = p"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-colors"
-                :class="[
-                  currentPage === p 
-                    ? 'bg-blue-600 text-white font-medium shadow-sm' 
-                    : 'text-slate-600 hover:bg-slate-100'
-                ]"
-              >
-                {{ p }}
-              </button>
-              <span 
-                v-else-if="p === 2 || p === meta.last_page - 1"
-                class="px-1 text-slate-400 text-sm"
-              >
-                ...
-              </span>
-            </template>
-
-            <!-- Next button -->
-            <button 
-              @click="currentPage < (meta.last_page || 1) && (currentPage++)"
-              :disabled="currentPage === (meta.last_page || 1)"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          v-if="!error && authors.length > 0 && meta"
+          :meta="meta"
+          @change="onPageChange"
+          class="hidden md:flex"
+        />
       </div>
 
       <!-- Mobile Author List (Card Layout) -->
@@ -628,30 +582,12 @@ onMounted(() => {
         </div>
 
         <!-- Mobile Pagination -->
-        <div v-if="meta && meta.last_page > 1" class="py-3 flex items-center justify-between select-none">
-          <p class="text-[11px] text-slate-500 font-normal">
-            Showing {{ ((currentPage - 1) * perPage) + 1 }}–{{ Math.min(currentPage * perPage, meta.total || 0) }} of {{ meta.total || 0 }}
-          </p>
-          <div class="flex items-center gap-1">
-            <!-- Prev button -->
-            <button 
-              @click="currentPage > 1 && (currentPage--)"
-              :disabled="currentPage === 1"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-            <span class="text-xs text-slate-600 font-medium px-2">{{ currentPage }} / {{ meta.last_page }}</span>
-            <!-- Next button -->
-            <button 
-              @click="currentPage < (meta.last_page || 1) && (currentPage++)"
-              :disabled="currentPage === (meta.last_page || 1)"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          v-if="meta"
+          :meta="meta"
+          @change="onPageChange"
+          class="md:hidden px-0 border-t-0"
+        />
       </div>
     </div>
 

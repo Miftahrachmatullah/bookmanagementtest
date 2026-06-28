@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('isbn', 20)->unique();
             $table->smallInteger('published_year');
             $table->text('description')->nullable();
+            $table->string('status', 20)->default('AVAILABLE');
+            $table->string('cover_image_path', 2048)->nullable();
             $table->timestamps();
         });
     }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { ImagePlus, Camera, X, AlertCircle } from 'lucide-vue-next'
+import { ImagePlus, Camera, X, AlertCircle, ChevronDown } from 'lucide-vue-next'
 import BaseModal from '../base/BaseModal.vue'
 import BaseInput from '../base/BaseInput.vue'
 import BaseSelect from '../base/BaseSelect.vue'
@@ -21,6 +21,34 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits(['close', 'submit'])
+
+// ─── Runtime Config ───────────────────────────────────────
+const config = useRuntimeConfig()
+const BASE = config.public.apiBase
+
+// ─── State: Daftar Author untuk Dropdown ──────────────────
+const authorOptions = ref<any[]>([])
+const loadingAuthors = ref(false)
+const authorFetchError = ref<string | null>(null)
+
+// ─── Fetch semua author dari API (tanpa pagination) ───────
+async function fetchAuthorOptions() {
+  loadingAuthors.value = true
+  authorFetchError.value = null
+  try {
+    const data = await $fetch<{ data: any[] }>(`${BASE}/authors`, {
+      params: { per_page: 100, page: 1 },
+      headers: { Accept: 'application/json' },
+    })
+    authorOptions.value = data.data
+  } catch (err: any) {
+    const msg = err?.data?.message ?? err?.message ?? 'Gagal memuat data author.'
+    authorFetchError.value = msg
+    console.error('[BookFormModal] Gagal fetch author options:', msg)
+  } finally {
+    loadingAuthors.value = false
+  }
+}
 
 // Form fields state
 const form = ref({
@@ -74,6 +102,8 @@ function removeCover() {
 // Reset form and cover states when modal show toggles
 watch(() => props.show, (newVal) => {
   if (newVal) {
+    fetchAuthorOptions()
+    
     bookCover.value = null
     coverError.value = null
     coverRemoved.value = false
@@ -205,14 +235,79 @@ function submitForm() {
       />
 
       <!-- Author Selection dropdown -->
-      <BaseSelect
-        v-model="form.author_id"
-        label="Author"
-        required
-        :options="authors"
-        placeholder="Select an author..."
-        :error="errors?.author_id"
-      />
+      <div class="space-y-1.5 text-left">
+        <label class="block text-sm font-medium text-slate-700">
+          Author <span class="text-red-500">*</span>
+        </label>
+
+        <!-- Loading state dropdown -->
+        <div
+          v-if="loadingAuthors"
+          class="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-sm text-slate-400 flex items-center gap-2"
+        >
+          <svg class="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          Loading authors...
+        </div>
+
+        <!-- Error state dropdown -->
+        <div
+          v-else-if="authorFetchError"
+          class="w-full border border-red-200 bg-white rounded-lg px-3 py-2 text-sm text-red-500 flex items-center justify-between"
+        >
+          <span>Failed to load authors.</span>
+          <button
+            type="button"
+            @click="fetchAuthorOptions"
+            class="text-xs text-blue-600 hover:underline ml-2 font-medium"
+          >
+            Retry
+          </button>
+        </div>
+
+        <!-- Select dropdown — tampil jika data sudah ada -->
+        <div v-else class="relative">
+          <select
+            v-model="form.author_id"
+            class="w-full appearance-none border rounded-lg px-3 py-2 text-sm pr-9 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 bg-white"
+            :class="errors?.author_id
+              ? 'border-red-400 ring-2 ring-red-100'
+              : 'border-slate-200'"
+          >
+            <option value="" disabled>
+              Select an author...
+            </option>
+            <option
+              v-for="author in authorOptions"
+              :key="author.id"
+              :value="author.id"
+            >
+              {{ author.name }}
+            </option>
+          </select>
+
+          <!-- Custom chevron icon -->
+          <ChevronDown
+            class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          />
+        </div>
+
+        <!-- Tidak ada author di database -->
+        <p
+          v-if="!loadingAuthors && !authorFetchError && authorOptions.length === 0"
+          class="text-xs text-amber-600 mt-1"
+        >
+          Belum ada author di database.
+          <NuxtLink to="/authors" class="underline">Tambah author terlebih dahulu.</NuxtLink>
+        </p>
+
+        <!-- Validation error -->
+        <p v-if="errors?.author_id" class="text-xs text-red-600 mt-1">
+          {{ errors.author_id }}
+        </p>
+      </div>
 
       <!-- ISBN Field (monospace) -->
       <BaseInput 

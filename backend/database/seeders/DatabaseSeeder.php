@@ -8,30 +8,40 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Seed the application's database.
+     *
+     * @return void
+     */
     public function run(): void
     {
-        $faker = \Faker\Factory::create();
+        // Define builder macro to support Model::factory() dynamically without modifying the Model classes.
+        \Illuminate\Database\Eloquent\Builder::macro('factory', function ($count = null, $state = []) {
+            $model = get_class($this->getModel());
+            $factory = \Illuminate\Database\Eloquent\Factories\Factory::factoryForModel($model);
+            return $factory
+                ->count(is_numeric($count) ? $count : null)
+                ->state(is_callable($count) || is_array($count) ? $count : $state);
+        });
 
-        // Buat 10 Author
-        for ($i = 1; $i <= 10; $i++) {
-            $author = Author::create([
-                'name'       => $faker->name(),
-                'email'      => $faker->unique()->safeEmail(),
-                'birth_date' => $faker->date('Y-m-d', '2000-01-01'),
-                'bio'        => $faker->sentence(15),
-            ]);
-
-            // Buat 1-3 Book per Author
-            $bookCount = rand(1, 3);
-            for ($j = 1; $j <= $bookCount; $j++) {
-                Book::create([
-                    'author_id'      => $author->id,
-                    'title'          => ucwords($faker->words(rand(2, 5), true)),
-                    'isbn'           => $faker->unique()->isbn13(),
-                    'published_year' => $faker->numberBetween(2010, date('Y')),
-                    'description'    => $faker->paragraph(),
+        // Seed exactly 20 authors, and assign 1 to 3 random books to each author
+        Author::factory(20)
+            ->create()
+            ->each(function ($author) {
+                Book::factory(rand(1, 3))->create([
+                    'author_id' => $author->id
                 ]);
-            }
+            });
+
+        // Ensure we have at least exactly 40 books total
+        $currentCount = Book::count();
+        if ($currentCount < 40) {
+            $needed = 40 - $currentCount;
+            Book::factory($needed)->create([
+                'author_id' => function () {
+                    return Author::inRandomOrder()->first()->id;
+                }
+            ]);
         }
     }
 }

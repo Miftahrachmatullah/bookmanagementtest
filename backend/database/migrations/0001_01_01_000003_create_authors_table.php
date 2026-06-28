@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('email', 255)->unique();
             $table->date('birth_date');
             $table->text('bio')->nullable();
+            $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();
         });
     }

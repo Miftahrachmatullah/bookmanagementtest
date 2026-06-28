@@ -19,9 +19,16 @@ watch(() => props.show, async (newVal) => {
   if (newVal && props.authorId) {
     loading.value = true
     try {
+      const config = useRuntimeConfig()
+      const BASE = config.public.apiBase
       const [authorData, booksData] = await Promise.all([
-        $fetch<any>(`/api/v1/authors/${props.authorId}`),
-        $fetch<any>(`/api/v1/books?author_id=${props.authorId}&per_page=100`)
+        $fetch<any>(`${BASE}/authors/${props.authorId}`),
+        $fetch<any>(`${BASE}/books`, {
+          params: {
+            author_id: props.authorId,
+            per_page: 100
+          }
+        })
       ])
       author.value = authorData.data
       books.value = booksData.data

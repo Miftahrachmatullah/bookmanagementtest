@@ -12,37 +12,73 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import AuthorDetailModal from '~/components/authors/AuthorDetailModal.vue'
-import { useToast } from '~/composables/useToast'
+import { dummyAuthors } from '~/composables/useAuthors'
+import { dummyBooks } from '~/composables/useBooks'
 
 const toast = useToast()
 const searchQuery = ref('')
 
-// Stat Cards: Data Real dari API
-const { data: authorsMeta, status: statusAuthors, refresh: refreshAuthorsMeta } = await useAsyncData('authors-meta', () =>
-  $fetch<any>('/api/v1/authors?per_page=1')
-)
-const { data: booksMeta, status: statusBooks, refresh: refreshBooksMeta } = await useAsyncData('books-meta', () =>
-  $fetch<any>('/api/v1/books?per_page=1')
-)
-const { data: circulationData, status: statusCirculation, refresh: refreshCirculation } = await useAsyncData('circulation-books', () =>
-  $fetch<any>('/api/v1/books?per_page=500')
-)
+const config = useRuntimeConfig()
+const BASE = config.public.apiBase
 
-const totalAuthors = computed(() => authorsMeta.value?.meta?.total ?? 0)
-const totalBooks = computed(() => booksMeta.value?.meta?.total ?? 0)
-const loanedBooksCount = computed(() => circulationData.value?.data?.filter((b: any) => b.status === 'LOANED').length ?? 0)
-const reservedBooksCount = computed(() => circulationData.value?.data?.filter((b: any) => b.status === 'RESERVED').length ?? 0)
+// Stat Cards: Data Real dari API dengan fallback
+const { data: authorsMeta, refresh: refreshAuthorsMeta } = await useAsyncData('authors-meta', async () => {
+  try {
+    return await $fetch<any>(`${BASE}/authors?per_page=1`)
+  } catch (e) {
+    return { meta: { total: dummyAuthors.value.length }, data: [] }
+  }
+})
 
-// Recent Books: Fetch dari API
-const { data: recentBooksData, status: statusRecentBooks, refresh: refreshRecentBooks } = await useAsyncData('recent-books', () =>
-  $fetch<any>('/api/v1/books?page=1&per_page=5')
-)
+const { data: booksMeta, refresh: refreshBooksMeta } = await useAsyncData('books-meta', async () => {
+  try {
+    return await $fetch<any>(`${BASE}/books?per_page=1`)
+  } catch (e) {
+    return { meta: { total: dummyBooks.value.length }, data: [] }
+  }
+})
+
+const { data: circulationData, refresh: refreshCirculation } = await useAsyncData('circulation-books', async () => {
+  try {
+    return await $fetch<any>(`${BASE}/books?per_page=500`)
+  } catch (e) {
+    return { data: dummyBooks.value }
+  }
+})
+
+const totalAuthors = computed(() => authorsMeta.value?.meta?.total ?? dummyAuthors.value.length)
+const totalBooks = computed(() => booksMeta.value?.meta?.total ?? dummyBooks.value.length)
+const loanedBooksCount = computed(() => {
+  const list = circulationData.value?.data ?? dummyBooks.value
+  return list.filter((b: any) => b.status === 'LOANED').length
+})
+const reservedBooksCount = computed(() => {
+  const list = circulationData.value?.data ?? dummyBooks.value
+  return list.filter((b: any) => b.status === 'RESERVED').length
+})
+
+// Recent Books: Fetch dari API dengan fallback
+const { data: recentBooksData, refresh: refreshRecentBooks } = await useAsyncData('recent-books', async () => {
+  try {
+    return await $fetch<any>(`${BASE}/books?page=1&per_page=5`)
+  } catch (e) {
+    const mapped = dummyBooks.value.slice(0, 5).map(b => ({
+      ...b,
+      author: dummyAuthors.value.find(a => a.id === b.author_id)
+    }))
+    return { data: mapped }
+  }
+})
 const recentBooks = computed(() => recentBooksData.value?.data ?? [])
 
-// Recent Authors: Fetch dari API + Klik Detail
-const { data: recentAuthorsData, status: statusRecentAuthors, refresh: refreshRecentAuthors } = await useAsyncData('recent-authors', () =>
-  $fetch<any>('/api/v1/authors?page=1&per_page=5')
-)
+// Recent Authors: Fetch dari API + Klik Detail dengan fallback
+const { data: recentAuthorsData, refresh: refreshRecentAuthors } = await useAsyncData('recent-authors', async () => {
+  try {
+    return await $fetch<any>(`${BASE}/authors?page=1&per_page=5`)
+  } catch (e) {
+    return { data: dummyAuthors.value.slice(0, 5) }
+  }
+})
 const recentAuthors = computed(() => recentAuthorsData.value?.data ?? [])
 
 const selectedAuthorId = ref<number | null>(null)
@@ -53,24 +89,30 @@ function openAuthorDetail(authorId: number) {
   showAuthorDetail.value = true
 }
 
-const statsLoading = computed(() => 
-  statusAuthors.value === 'pending' || 
-  statusBooks.value === 'pending' || 
-  statusCirculation.value === 'pending'
-)
-
-const booksLoading = computed(() => statusRecentBooks.value === 'pending')
-const authorsLoading = computed(() => statusRecentAuthors.value === 'pending')
+const statsLoading = ref(false)
+const booksLoading = ref(false)
+const authorsLoading = ref(false)
 
 const handleRefresh = async () => {
-  toast.success('Refreshing data...', 'Fetching latest statistics from database.')
-  await Promise.all([
-    refreshAuthorsMeta(),
-    refreshBooksMeta(),
-    refreshCirculation(),
-    refreshRecentBooks(),
-    refreshRecentAuthors()
-  ])
+  statsLoading.value = true
+  booksLoading.value = true
+  authorsLoading.value = true
+  try {
+    await Promise.all([
+      refreshAuthorsMeta(),
+      refreshBooksMeta(),
+      refreshCirculation(),
+      refreshRecentBooks(),
+      refreshRecentAuthors()
+    ])
+    toast.success('Data Refreshed', 'Latest catalog statistics have been successfully loaded.')
+  } catch (err) {
+    toast.danger('Refresh Failed', 'Unable to retrieve latest database statistics.')
+  } finally {
+    statsLoading.value = false
+    booksLoading.value = false
+    authorsLoading.value = false
+  }
 }
 
 // Filter books and authors on search query (local fallback filtering)

@@ -12,6 +12,7 @@ class Author extends Model
         'email',
         'birth_date',
         'bio',
+        'profile_photo_path',
     ];
 
     protected $casts = [

@@ -4,12 +4,9 @@ import {
   Search, 
   RefreshCw, 
   SlidersHorizontal, 
-  Download, 
   Plus, 
   Pencil, 
   Trash2, 
-  ChevronLeft, 
-  ChevronRight,
   ChevronDown,
   BookOpen,
   AlertCircle,
@@ -24,6 +21,7 @@ import ConfirmDialog from '~/components/ui/ConfirmDialog.vue'
 import BookCover from '~/components/ui/BookCover.vue'
 import EmptyState from '~/components/ui/EmptyState.vue'
 import AuthorDetailModal from '~/components/authors/AuthorDetailModal.vue'
+import Pagination from '~/components/ui/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 import { useBooks } from '~/composables/useBooks'
 
@@ -39,6 +37,10 @@ const searchQuery = ref((route.query.search as string) || '')
 const selectedAuthorId = ref<string | number>((route.query.author_id as string) || '')
 const currentPage = ref(parseInt(route.query.page as string) || 1)
 const perPage = ref(10)
+
+function onPageChange(page: number) {
+  currentPage.value = page
+}
 
 // Modal states
 const showAddModal = ref(false)
@@ -255,14 +257,7 @@ onMounted(() => {
       
       <div class="flex items-center gap-2 md:gap-3">
         <!-- Export Button (ghost) -->
-        <button 
-          @click="triggerExport"
-          class="hidden md:inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          title="Export CSV"
-        >
-          <Download class="w-4 h-4" />
-          <span>Export</span>
-        </button>
+        <DownloadButton @click="triggerExport" />
 
         <!-- Add Book Button Desktop -->
         <BaseButton variant="primary" @click="handleAddClick" class="hidden md:inline-flex">
@@ -489,53 +484,11 @@ onMounted(() => {
         </div>
 
         <!-- Pagination Row -->
-        <div v-if="!error && books.length > 0 && meta && meta.last_page > 1" class="px-4 py-3 flex items-center justify-between border-t border-slate-100 select-none">
-          <p class="text-xs text-slate-500 font-normal">
-            Showing {{ ((currentPage - 1) * perPage) + 1 }}–{{ Math.min(currentPage * perPage, meta.total) }} of {{ meta.total }} results
-          </p>
-
-          <div class="flex items-center gap-1">
-            <!-- Prev button -->
-            <button 
-              @click="currentPage > 1 && (currentPage--)"
-              :disabled="currentPage === 1"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft class="w-4 h-4" />
-            </button>
-
-            <!-- Page indicators -->
-            <template v-for="p in meta.last_page" :key="p">
-              <button
-                v-if="p === 1 || p === meta.last_page || Math.abs(p - currentPage) <= 1"
-                @click="currentPage = p"
-                class="w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-colors"
-                :class="[
-                  currentPage === p 
-                    ? 'bg-blue-600 text-white font-medium shadow-sm' 
-                    : 'text-slate-600 hover:bg-slate-100'
-                ]"
-              >
-                {{ p }}
-              </button>
-              <span 
-                v-else-if="p === 2 || p === meta.last_page - 1"
-                class="px-1 text-slate-400 text-sm"
-              >
-                ...
-              </span>
-            </template>
-
-            <!-- Next button -->
-            <button 
-              @click="currentPage < (meta.last_page || 1) && (currentPage++)"
-              :disabled="currentPage === (meta.last_page || 1)"
-              class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          v-if="!error && books.length > 0 && meta"
+          :meta="meta"
+          @change="onPageChange"
+        />
       </div>
     </div>
 

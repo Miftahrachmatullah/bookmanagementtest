@@ -9,41 +9,7 @@ export interface Toast {
   duration?: number
 }
 
-// Pre-seed the 4 specified toasts from the prompt for presentation purposes
-const toasts = ref<Toast[]>([
-  {
-    id: -1,
-    type: 'success',
-    title: 'Author added',
-    message: 'Gabriel García Márquez has been added successfully.',
-    progress: 85,
-    duration: 0
-  },
-  {
-    id: -2,
-    type: 'info',
-    title: 'Changes saved',
-    message: "Elena Ferrante's profile has been updated.",
-    progress: 55,
-    duration: 0
-  },
-  {
-    id: -3,
-    type: 'danger',
-    title: 'Book deleted',
-    message: "'Silent Patterns' has been permanently removed.",
-    progress: 25,
-    duration: 0
-  },
-  {
-    id: -4,
-    type: 'danger',
-    title: 'Something went wrong',
-    message: 'Failed to save changes. Please try again.',
-    progress: 0,
-    duration: 0
-  }
-])
+const toasts = ref<Toast[]>([])
 
 let toastId = 0
 

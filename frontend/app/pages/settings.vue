@@ -10,7 +10,8 @@ const loading = ref(false)
 const handleResetDb = async () => {
   loading.value = true
   try {
-    await $fetch('/api/v1/reset', { method: 'POST' })
+    const config = useRuntimeConfig()
+    await $fetch(`${config.public.apiBase}/reset`, { method: 'POST' })
     toast.success('Database Reset', 'The library database has been restored to its original seeded state.')
   } catch (error) {
     toast.danger('Reset Failed', 'There was a system error trying to reset the database.')

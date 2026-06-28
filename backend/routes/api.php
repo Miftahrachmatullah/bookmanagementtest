@@ -12,4 +12,10 @@ Route::prefix('v1')->group(function () {
     // Books
     Route::apiResource('books', BookController::class);
 
+    // Database Reset
+    Route::post('reset', function () {
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true]);
+        return response()->json(['message' => 'Database reset successfully']);
+    });
+
 });

@@ -13,6 +13,8 @@ class Book extends Model
         'isbn',
         'published_year',
         'description',
+        'status',
+        'cover_image_path',
     ];
 
     protected $casts = [
