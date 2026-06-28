@@ -28,7 +28,7 @@ defineEmits(['confirm', 'close'])
 
 <template>
   <BaseModal :show="show" :title="title" @close="$emit('close')" maxWidthClass="max-w-[400px]">
-    <div class="flex flex-col pt-1 text-left">
+    <div class="flex flex-col items-center pt-1 text-center">
       <!-- Warning Icon Container -->
       <div class="bg-amber-50 rounded-xl p-3 w-fit mb-4 text-amber-600">
         <AlertTriangle class="w-7 h-7" />

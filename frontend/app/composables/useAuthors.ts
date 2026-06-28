@@ -71,90 +71,39 @@ export function useAuthors() {
   }
 
   async function createAuthor(payload: any) {
-    const name = payload instanceof FormData ? payload.get('name') as string : payload.name
-    const email = payload instanceof FormData ? payload.get('email') as string : payload.email
-    const birth_date = payload instanceof FormData ? payload.get('birth_date') as string : payload.birth_date
-    const bio = payload instanceof FormData ? payload.get('bio') as string : payload.bio
-
-    try {
-      const data = await $fetch<{ data: Author }>(`${BASE}/authors`, {
-        method: 'POST',
-        body: payload,
-        headers: { Accept: 'application/json' },
-      })
-      // Sync local DB
-      dummyAuthors.value.unshift(data.data)
-      return data
-    } catch (err: any) {
-      if (err.status === 422 || err.response?.status === 422) throw err
-      console.warn('Backend API submit failed, adding to local dummy database.')
-      
-      const newAuthor: Author = {
-        id: Math.max(...dummyAuthors.value.map(a => a.id), 0) + 1,
-        name: name || 'Unnamed Author',
-        email: email || 'unknown@example.com',
-        birth_date: birth_date || new Date().toISOString().split('T')[0],
-        bio: bio || '',
-        books_count: 0
-      }
-      dummyAuthors.value.unshift(newAuthor)
-      return { data: newAuthor }
-    }
+    const data = await $fetch<{ data: Author }>(`${BASE}/authors`, {
+      method: 'POST',
+      body: payload,
+      headers: { Accept: 'application/json' },
+    })
+    // Sync local DB
+    dummyAuthors.value.unshift(data.data)
+    return data
   }
 
   async function updateAuthor(id: number, payload: any) {
-    const name = payload instanceof FormData ? payload.get('name') as string : payload.name
-    const email = payload instanceof FormData ? payload.get('email') as string : payload.email
-    const birth_date = payload instanceof FormData ? payload.get('birth_date') as string : payload.birth_date
-    const bio = payload instanceof FormData ? payload.get('bio') as string : payload.bio
-
     const isMultipart = payload instanceof FormData
     if (isMultipart) {
       payload.append('_method', 'PUT')
     }
 
-    try {
-      const data = await $fetch<{ data: Author }>(`${BASE}/authors/${id}`, {
-        method: isMultipart ? 'POST' : 'PUT',
-        body: payload,
-        headers: { Accept: 'application/json' },
-      })
-      // Sync local DB
-      const idx = dummyAuthors.value.findIndex(a => a.id === id)
-      if (idx !== -1) dummyAuthors.value[idx] = data.data
-      return data
-    } catch (err: any) {
-      if (err.status === 422 || err.response?.status === 422) throw err
-      console.warn('Backend API update failed, updating local dummy database.')
-      
-      const idx = dummyAuthors.value.findIndex(a => a.id === id)
-      if (idx !== -1) {
-        const existing = dummyAuthors.value[idx]
-        const updated = {
-          ...existing,
-          name: name ?? existing.name,
-          email: email ?? existing.email,
-          birth_date: birth_date ?? existing.birth_date,
-          bio: bio ?? existing.bio
-        }
-        dummyAuthors.value[idx] = updated
-        return { data: updated }
-      }
-      throw err
-    }
+    const data = await $fetch<{ data: Author }>(`${BASE}/authors/${id}`, {
+      method: isMultipart ? 'POST' : 'PUT',
+      body: payload,
+      headers: { Accept: 'application/json' },
+    })
+    // Sync local DB
+    const idx = dummyAuthors.value.findIndex(a => a.id === id)
+    if (idx !== -1) dummyAuthors.value[idx] = data.data
+    return data
   }
 
   async function deleteAuthor(id: number) {
-    try {
-      await $fetch(`${BASE}/authors/${id}`, {
-        method: 'DELETE',
-        headers: { Accept: 'application/json' },
-      })
-      dummyAuthors.value = dummyAuthors.value.filter(a => a.id !== id)
-    } catch (err: any) {
-      console.warn('Backend API delete failed, deleting from local dummy database.')
-      dummyAuthors.value = dummyAuthors.value.filter(a => a.id !== id)
-    }
+    await $fetch(`${BASE}/authors/${id}`, {
+      method: 'DELETE',
+      headers: { Accept: 'application/json' },
+    })
+    dummyAuthors.value = dummyAuthors.value.filter(a => a.id !== id)
   }
 
   return {

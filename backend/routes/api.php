@@ -14,7 +14,7 @@ Route::prefix('v1')->group(function () {
 
     // Database Reset
     Route::post('reset', function () {
-        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true]);
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
         return response()->json(['message' => 'Database reset successfully']);
     });
 

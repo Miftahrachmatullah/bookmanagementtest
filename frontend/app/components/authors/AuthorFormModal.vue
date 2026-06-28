@@ -28,6 +28,8 @@ const form = ref({
   bio: ''
 })
 
+const localErrors = ref<Record<string, string>>({})
+
 // Photo upload states
 const profilePhoto = ref<File | null>(null)
 const profilePhotoPreview = ref<string | null>(null)
@@ -73,6 +75,7 @@ watch(() => props.show, (newVal) => {
     profilePhoto.value = null
     photoError.value = null
     photoRemoved.value = false
+    localErrors.value = {}
     
     if (props.author) {
       // Prefill fields for Edit mode
@@ -97,6 +100,31 @@ watch(() => props.show, (newVal) => {
 })
 
 function submitForm() {
+  localErrors.value = {}
+  let hasError = false
+
+  if (!form.value.name.trim()) {
+    localErrors.value.name = 'Name is required.'
+    hasError = true
+  }
+
+  if (!form.value.email.trim()) {
+    localErrors.value.email = 'Email is required.'
+    hasError = true
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+    localErrors.value.email = 'Please enter a valid email address.'
+    hasError = true
+  }
+
+  if (!form.value.birth_date) {
+    localErrors.value.birth_date = 'Birth date is required.'
+    hasError = true
+  }
+
+  if (hasError) {
+    return
+  }
+
   const formData = new FormData()
   formData.append('name', form.value.name)
   formData.append('email', form.value.email)
@@ -190,7 +218,7 @@ function submitForm() {
         label="Name"
         required
         placeholder="Enter full name"
-        :error="errors?.name"
+        :error="localErrors.name || errors?.name"
       />
 
       <!-- Email Field -->
@@ -199,7 +227,7 @@ function submitForm() {
         label="Email address"
         required
         placeholder="author@example.com"
-        :error="errors?.email"
+        :error="localErrors.email || errors?.email"
         id="author-email-input"
       />
 
@@ -209,7 +237,7 @@ function submitForm() {
         label="Birth date"
         required
         type="date"
-        :error="errors?.birth_date"
+        :error="localErrors.birth_date || errors?.birth_date"
       />
 
       <!-- Bio Field (optional) -->
@@ -223,10 +251,10 @@ function submitForm() {
           rows="3"
           placeholder="Write a short biography..."
           class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all duration-150"
-          :class="{ 'border-red-400 focus:ring-red-100': errors?.bio }"
+          :class="{ 'border-red-400 focus:ring-red-100': localErrors.bio || errors?.bio }"
         />
         <div class="flex justify-between items-center text-xs">
-          <span class="text-red-600">{{ errors?.bio }}</span>
+          <span class="text-red-600">{{ localErrors.bio || errors?.bio }}</span>
           <span class="text-slate-400 ml-auto">Max 1000 characters.</span>
         </div>
       </div>

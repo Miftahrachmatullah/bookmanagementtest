@@ -74,95 +74,37 @@ export function useBooks() {
   }
 
   async function createBook(payload: any) {
-    const title = payload instanceof FormData ? payload.get('title') as string : payload.title
-    const author_id = payload instanceof FormData ? Number(payload.get('author_id')) : Number(payload.author_id)
-    const isbn = payload instanceof FormData ? payload.get('isbn') as string : payload.isbn
-    const published_year = payload instanceof FormData ? Number(payload.get('published_year')) : Number(payload.published_year)
-    const description = payload instanceof FormData ? payload.get('description') as string : payload.description
-    const status = payload instanceof FormData ? payload.get('status') as string : payload.status
-
-    try {
-      const data = await $fetch<{ data: Book }>(`${BASE}/books`, {
-        method: 'POST',
-        body: payload,
-        headers: { Accept: 'application/json' },
-      })
-      dummyBooks.value.unshift(data.data)
-      return data
-    } catch (err: any) {
-      if (err.status === 422 || err.response?.status === 422) throw err
-      console.warn('Backend API submit failed, adding to local dummy books database.')
-
-      const newBook: Book = {
-        id: Math.max(...dummyBooks.value.map(b => b.id), 0) + 1,
-        author_id: author_id || 1,
-        title: title || 'Unnamed Book',
-        isbn: isbn || '000-0-00-000000-0',
-        published_year: published_year || new Date().getFullYear(),
-        description: description || '',
-        status: (status || 'AVAILABLE') as any
-      }
-      dummyBooks.value.unshift(newBook)
-      return { data: newBook }
-    }
+    const data = await $fetch<{ data: Book }>(`${BASE}/books`, {
+      method: 'POST',
+      body: payload,
+      headers: { Accept: 'application/json' },
+    })
+    dummyBooks.value.unshift(data.data)
+    return data
   }
 
   async function updateBook(id: number, payload: any) {
-    const title = payload instanceof FormData ? payload.get('title') as string : payload.title
-    const author_id = payload instanceof FormData ? Number(payload.get('author_id')) : Number(payload.author_id)
-    const isbn = payload instanceof FormData ? payload.get('isbn') as string : payload.isbn
-    const published_year = payload instanceof FormData ? Number(payload.get('published_year')) : Number(payload.published_year)
-    const description = payload instanceof FormData ? payload.get('description') as string : payload.description
-    const status = payload instanceof FormData ? payload.get('status') as string : payload.status
-
     const isMultipart = payload instanceof FormData
     if (isMultipart) {
       payload.append('_method', 'PUT')
     }
 
-    try {
-      const data = await $fetch<{ data: Book }>(`${BASE}/books/${id}`, {
-        method: isMultipart ? 'POST' : 'PUT',
-        body: payload,
-        headers: { Accept: 'application/json' },
-      })
-      const idx = dummyBooks.value.findIndex(b => b.id === id)
-      if (idx !== -1) dummyBooks.value[idx] = data.data
-      return data
-    } catch (err: any) {
-      if (err.status === 422 || err.response?.status === 422) throw err
-      console.warn('Backend API update failed, updating local dummy books database.')
-
-      const idx = dummyBooks.value.findIndex(b => b.id === id)
-      if (idx !== -1) {
-        const existing = dummyBooks.value[idx]
-        const updated = {
-          ...existing,
-          title: title ?? existing.title,
-          author_id: author_id ?? existing.author_id,
-          isbn: isbn ?? existing.isbn,
-          published_year: published_year ?? existing.published_year,
-          description: description ?? existing.description,
-          status: (status ?? existing.status) as any
-        }
-        dummyBooks.value[idx] = updated
-        return { data: updated }
-      }
-      throw err
-    }
+    const data = await $fetch<{ data: Book }>(`${BASE}/books/${id}`, {
+      method: isMultipart ? 'POST' : 'PUT',
+      body: payload,
+      headers: { Accept: 'application/json' },
+    })
+    const idx = dummyBooks.value.findIndex(b => b.id === id)
+    if (idx !== -1) dummyBooks.value[idx] = data.data
+    return data
   }
 
   async function deleteBook(id: number) {
-    try {
-      await $fetch(`${BASE}/books/${id}`, {
-        method: 'DELETE',
-        headers: { Accept: 'application/json' },
-      })
-      dummyBooks.value = dummyBooks.value.filter(b => b.id !== id)
-    } catch (err: any) {
-      console.warn('Backend API delete failed, deleting from local dummy books database.')
-      dummyBooks.value = dummyBooks.value.filter(b => b.id !== id)
-    }
+    await $fetch(`${BASE}/books/${id}`, {
+      method: 'DELETE',
+      headers: { Accept: 'application/json' },
+    })
+    dummyBooks.value = dummyBooks.value.filter(b => b.id !== id)
   }
 
   return {

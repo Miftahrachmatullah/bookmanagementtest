@@ -77,7 +77,10 @@ const addErrors = ref<Record<string, string>>({})
 const editErrors = ref<Record<string, string>>({})
 
 // Fetch authors list for dropdown filter
-const { data: authorsResponse } = await useFetch('/api/v1/authors?per_page=100')
+const config = useRuntimeConfig()
+const { data: authorsResponse } = await useFetch('/authors?per_page=100', {
+  baseURL: config.public.apiBase as string
+})
 const authorsList = computed(() => {
   if (!authorsResponse.value?.data) return []
   return authorsResponse.value.data.map((a: any) => ({

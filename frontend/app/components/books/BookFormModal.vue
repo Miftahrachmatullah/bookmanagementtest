@@ -99,6 +99,8 @@ function removeCover() {
   if (coverInput.value) coverInput.value.value = ''
 }
 
+const localErrors = ref<Record<string, string>>({})
+
 // Reset form and cover states when modal show toggles
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -107,6 +109,7 @@ watch(() => props.show, (newVal) => {
     bookCover.value = null
     coverError.value = null
     coverRemoved.value = false
+    localErrors.value = {}
     
     if (props.book) {
       // Prefill fields for Edit mode
@@ -135,6 +138,38 @@ watch(() => props.show, (newVal) => {
 })
 
 function submitForm() {
+  localErrors.value = {}
+  let hasError = false
+
+  if (!form.value.title.trim()) {
+    localErrors.value.title = 'Title is required.'
+    hasError = true
+  }
+
+  if (!form.value.author_id) {
+    localErrors.value.author_id = 'Author is required.'
+    hasError = true
+  }
+
+  if (!form.value.isbn.trim()) {
+    localErrors.value.isbn = 'ISBN is required.'
+    hasError = true
+  }
+
+  if (!form.value.published_year) {
+    localErrors.value.published_year = 'Published year is required.'
+    hasError = true
+  }
+
+  if (!form.value.status) {
+    localErrors.value.status = 'Status is required.'
+    hasError = true
+  }
+
+  if (hasError) {
+    return
+  }
+
   const formData = new FormData()
   formData.append('title', form.value.title)
   formData.append('author_id', String(form.value.author_id))
@@ -231,7 +266,7 @@ function submitForm() {
         label="Title"
         required
         placeholder="Enter book title"
-        :error="errors?.title"
+        :error="localErrors.title || errors?.title"
       />
 
       <!-- Author Selection dropdown -->
@@ -272,7 +307,7 @@ function submitForm() {
           <select
             v-model="form.author_id"
             class="w-full appearance-none border rounded-lg px-3 py-2 text-sm pr-9 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 bg-white"
-            :class="errors?.author_id
+            :class="(localErrors.author_id || errors?.author_id)
               ? 'border-red-400 ring-2 ring-red-100'
               : 'border-slate-200'"
           >
@@ -304,8 +339,8 @@ function submitForm() {
         </p>
 
         <!-- Validation error -->
-        <p v-if="errors?.author_id" class="text-xs text-red-600 mt-1">
-          {{ errors.author_id }}
+        <p v-if="localErrors.author_id || errors?.author_id" class="text-xs text-red-600 mt-1">
+          {{ localErrors.author_id || errors?.author_id }}
         </p>
       </div>
 
@@ -316,7 +351,7 @@ function submitForm() {
         required
         mono
         placeholder="e.g. 978-0-061-96436-9"
-        :error="errors?.isbn"
+        :error="localErrors.isbn || errors?.isbn"
       />
 
       <!-- Published Year & Status Grid -->
@@ -327,7 +362,7 @@ function submitForm() {
           required
           type="number"
           placeholder="e.g. 2023"
-          :error="errors?.published_year"
+          :error="localErrors.published_year || errors?.published_year"
         />
 
         <!-- Status select -->
@@ -339,7 +374,7 @@ function submitForm() {
             v-model="form.status"
             class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none transition-colors"
             :class="[
-              errors?.status ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-500',
+              (localErrors.status || errors?.status) ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-200 focus:ring-2 focus:ring-blue-100 focus:border-blue-500',
               form.status === 'AVAILABLE' ? 'bg-green-50 text-green-700' : 
               form.status === 'LOANED' ? 'bg-amber-50 text-amber-700' : 
               'bg-red-50 text-red-700'
@@ -349,7 +384,7 @@ function submitForm() {
             <option value="LOANED" class="bg-white text-slate-900">Loaned</option>
             <option value="RESERVED" class="bg-white text-slate-900">Reserved</option>
           </select>
-          <p v-if="errors?.status" class="text-xs text-red-600 mt-1">{{ errors.status }}</p>
+          <p v-if="localErrors.status || errors?.status" class="text-xs text-red-600 mt-1">{{ localErrors.status || errors?.status }}</p>
         </div>
       </div>
 
@@ -364,10 +399,10 @@ function submitForm() {
           rows="3"
           placeholder="Enter a short description of the book..."
           class="w-full px-3 py-2 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all duration-150"
-          :class="{ 'border-red-400 focus:ring-red-100': errors?.description }"
+          :class="{ 'border-red-400 focus:ring-red-100': localErrors.description || errors?.description }"
         />
         <div class="flex justify-between items-center text-xs">
-          <span class="text-red-600">{{ errors?.description }}</span>
+          <span class="text-red-600">{{ localErrors.description || errors?.description }}</span>
           <span class="text-slate-400 ml-auto">Max 2000 characters.</span>
         </div>
       </div>
