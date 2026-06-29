@@ -127,7 +127,7 @@ books-management-test/
 ├── README.md
 ├── EXPLANATION.md
 ├── AI_USAGE.md
-└── PRD.md
+└── .gitignore
 ```
 
 ---
@@ -136,7 +136,7 @@ books-management-test/
 
 Make sure the following software is installed:
 
-- PHP 8.5+
+- PHP 8.4+
 - Composer
 - Node.js 22+
 - npm
@@ -363,7 +363,7 @@ https://bookmanagementtest.vercel.app/
 Backend API
 
 ```
-https://merry-unity-production-eae9.up.railway.app/
+https://merry-unity-production-eae9.up.railway.app/api/v1
 ```
 
 ---
