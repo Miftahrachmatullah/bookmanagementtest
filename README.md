@@ -252,11 +252,11 @@ http://localhost:3000
 
 # Application Routes
 
-| Page | URL |
-|------|-----|
-| Dashboard | http://localhost:3000 |
-| Authors | http://localhost:3000/authors |
-| Books | http://localhost:3000/books |
+| Page      | URL                           |
+| --------- | ----------------------------- |
+| Dashboard | http://localhost:3000         |
+| Authors   | http://localhost:3000/authors |
+| Books     | http://localhost:3000/books   |
 
 ---
 
@@ -270,23 +270,23 @@ http://localhost:8000/api/v1
 
 ## Authors
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /authors | Get paginated authors |
-| GET | /authors/{id} | Get author details |
-| POST | /authors | Create author |
-| PUT | /authors/{id} | Update author |
-| DELETE | /authors/{id} | Delete author |
+| Method | Endpoint      | Description           |
+| ------ | ------------- | --------------------- |
+| GET    | /authors      | Get paginated authors |
+| GET    | /authors/{id} | Get author details    |
+| POST   | /authors      | Create author         |
+| PUT    | /authors/{id} | Update author         |
+| DELETE | /authors/{id} | Delete author         |
 
 ## Books
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /books | Get paginated books |
-| GET | /books/{id} | Get book details |
-| POST | /books | Create book |
-| PUT | /books/{id} | Update book |
-| DELETE | /books/{id} | Delete book |
+| Method | Endpoint    | Description         |
+| ------ | ----------- | ------------------- |
+| GET    | /books      | Get paginated books |
+| GET    | /books/{id} | Get book details    |
+| POST   | /books      | Create book         |
+| PUT    | /books/{id} | Update book         |
+| DELETE | /books/{id} | Delete book         |
 
 ---
 
@@ -343,12 +343,12 @@ Suggested screenshots:
 
 # Documentation
 
-| File | Description |
-|------|-------------|
-| README.md | Project setup and usage |
-| PRD.md | Product Requirements Document |
+| File           | Description                       |
+| -------------- | --------------------------------- |
+| README.md      | Project setup and usage           |
+| PRD.md         | Product Requirements Document     |
 | EXPLANATION.md | Design decisions and architecture |
-| AI_USAGE.md | AI-assisted development process |
+| AI_USAGE.md    | AI-assisted development process   |
 
 ---
 
@@ -357,13 +357,13 @@ Suggested screenshots:
 Frontend
 
 ```
-https://your-vercel-url.vercel.app
+https://bookmanagementtest.vercel.app/
 ```
 
 Backend API
 
 ```
-https://your-railway-url.up.railway.app/api/v1
+https://merry-unity-production-eae9.up.railway.app/
 ```
 
 ---
